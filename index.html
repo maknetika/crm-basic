@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Basic — Gestión de Clientes</title>
+<style>
+  :root{
+    --bg:#0b0e14;
+    --bg-alt:#11151f;
+    --panel:#161b26;
+    --panel-2:#1c2230;
+    --border:#262d3d;
+    --text:#e9edf5;
+    --text-dim:#8b93a7;
+    --accent:#6d5efc;
+    --accent-2:#37e0c4;
+    --accent-3:#ff6b9d;
+    --danger:#ff5470;
+    --warn:#ffb454;
+    --ok:#37e0c4;
+    --radius:14px;
+    --shadow:0 10px 30px -10px rgba(0,0,0,.5);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(109,94,252,.18), transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(55,224,196,.12), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    padding:24px;
+  }
+  .app{max-width:1280px; margin:0 auto; display:flex; flex-direction:column; gap:20px;}
+
+  header.topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 24px;
+    background:linear-gradient(135deg, rgba(109,94,252,.15), rgba(55,224,196,.08));
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    backdrop-filter:blur(10px);
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-logo{
+    width:40px; height:40px; border-radius:10px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:18px; color:#0b0e14;
+  }
+  .brand h1{font-size:20px; font-weight:700; letter-spacing:.2px;}
+  .brand span{font-size:12px; color:var(--text-dim);}
+  nav.tabs{display:flex; gap:6px; background:var(--panel); padding:5px; border-radius:12px; border:1px solid var(--border);}
+  nav.tabs button{
+    padding:9px 16px; border:none; background:transparent; color:var(--text-dim);
+    border-radius:9px; cursor:pointer; font-size:13.5px; font-weight:600; transition:.2s;
+  }
+  nav.tabs button.active{background:linear-gradient(135deg,var(--accent),#8b7bff); color:#fff; box-shadow:0 4px 14px -4px rgba(109,94,252,.6);}
+  nav.tabs button:hover:not(.active){color:var(--text); background:var(--panel-2);}
+
+  .stats-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px;}
+  .stat-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px 18px; position:relative; overflow:hidden;
+  }
+  .stat-card::before{content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--accent-color,var(--accent));}
+  .stat-card .label{font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px;}
+  .stat-card .value{font-size:26px; font-weight:800;}
+
+  section.panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:22px; box-shadow:var(--shadow);
+  }
+  section.panel h2{font-size:16px; margin-bottom:16px; display:flex; align-items:center; gap:8px;}
+  section.panel h2 .dot{width:8px; height:8px; border-radius:50%; background:var(--accent);}
+
+  .toolbar{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; align-items:center; justify-content:space-between;}
+  .search-box{position:relative; flex:1; min-width:220px; max-width:340px;}
+  .search-box input{
+    width:100%; padding:10px 14px 10px 36px; background:var(--bg-alt); border:1px solid var(--border);
+    border-radius:10px; color:var(--text); font-size:14px; outline:none; transition:.2s;
+  }
+  .search-box input:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(109,94,252,.15);}
+  .search-box::before{content:'🔍'; position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:13px; opacity:.6;}
+
+  select, .filter-select{
+    padding:10px 14px; background:var(--bg-alt); border:1px solid var(--border);
+    border-radius:10px; color:var(--text); font-size:13.5px; outline:none; cursor:pointer;
+  }
+
+  .btn{
+    padding:10px 18px; border:none; border-radius:10px; font-weight:600; font-size:13.5px;
+    cursor:pointer; transition:.2s; display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#8b7bff); color:#fff; box-shadow:0 4px 14px -4px rgba(109,94,252,.6);}
+  .btn-primary:hover{filter:brightness(1.1); transform:translateY(-1px);}
+  .btn-ghost{background:var(--panel-2); color:var(--text); border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--border);}
+  .btn-danger{background:rgba(255,84,112,.15); color:var(--danger); border:1px solid rgba(255,84,112,.3);}
+  .btn-danger:hover{background:rgba(255,84,112,.25);}
+  .btn-sm{padding:6px 10px; font-size:12px; border-radius:8px;}
+
+  table{width:100%; border-collapse:collapse;}
+  thead th{
+    text-align:left; padding:12px 14px; font-size:11.5px; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--text-dim); border-bottom:1px solid var(--border);
+  }
+  tbody td{padding:14px; border-bottom:1px solid var(--border); font-size:14px;}
+  tbody tr{transition:.15s;}
+  tbody tr:hover{background:var(--panel-2);}
+  tbody tr:last-child td{border-bottom:none;}
+  .cliente-nombre{font-weight:600;}
+  .cliente-email{color:var(--text-dim); font-size:13px;}
+
+  .badge{
+    padding:4px 11px; border-radius:20px; font-size:11.5px; font-weight:700;
+    display:inline-flex; align-items:center; gap:5px; text-transform:uppercase; letter-spacing:.3px;
+  }
+  .badge::before{content:''; width:6px; height:6px; border-radius:50%; background:currentColor;}
+  .badge-activo{background:rgba(55,224,196,.15); color:var(--ok);}
+  .badge-potencial{background:rgba(255,180,84,.15); color:var(--warn);}
+  .badge-inactivo{background:rgba(139,147,167,.15); color:var(--text-dim);}
+  .badge-perdido{background:rgba(255,84,112,.15); color:var(--danger);}
+
+  .row-actions{display:flex; gap:6px;}
+  .icon-btn{
+    width:32px; height:32px; border-radius:8px; border:1px solid var(--border); background:var(--bg-alt);
+    color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:.2s;
+  }
+  .icon-btn:hover{background:var(--panel-2); color:var(--text);}
+  .icon-btn.danger:hover{color:var(--danger); border-color:rgba(255,84,112,.4);}
+
+  .empty-state{text-align:center; padding:50px 20px; color:var(--text-dim);}
+  .empty-state .emoji{font-size:38px; margin-bottom:10px;}
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(6,8,14,.7); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:26px;
+    width:100%; max-width:440px; box-shadow:0 20px 60px -10px rgba(0,0,0,.6);
+    animation:pop .18s ease;
+  }
+  @keyframes pop{from{opacity:0; transform:scale(.96) translateY(6px);} to{opacity:1; transform:scale(1) translateY(0);}}
+  .modal h3{margin-bottom:18px; font-size:17px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:6px; font-weight:600;}
+  .field input, .field select{
+    width:100%; padding:10px 12px; background:var(--bg-alt); border:1px solid var(--border);
+    border-radius:9px; color:var(--text); font-size:14px; outline:none;
+  }
+  .field input:focus, .field select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(109,94,252,.15);}
+  .modal-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:20px;}
+
+  /* Ecommerce grid */
+  .products-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px;}
+  .product-card{
+    background:var(--bg-alt); border:1px solid var(--border); border-radius:14px; padding:18px;
+    display:flex; flex-direction:column; gap:10px; transition:.2s;
+  }
+  .product-card:hover{transform:translateY(-3px); border-color:var(--accent);}
+  .product-icon{
+    width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    font-size:20px; background:linear-gradient(135deg,var(--accent-3),var(--accent));
+  }
+  .product-card h4{font-size:15px;}
+  .product-card p{font-size:12.5px; color:var(--text-dim); line-height:1.5;}
+  .product-price{font-size:20px; font-weight:800; color:var(--accent-2); margin-top:auto;}
+  .product-meta{display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-dim);}
+
+  /* Social */
+  .social-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px;}
+  .social-card{
+    background:var(--bg-alt); border:1px solid var(--border); border-radius:14px; padding:18px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .social-head{display:flex; align-items:center; gap:10px;}
+  .social-icon{width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:#fff;}
+  .social-card textarea{
+    width:100%; min-height:90px; background:var(--panel); border:1px solid var(--border); border-radius:9px;
+    padding:10px 12px; color:var(--text); font-size:13px; resize:vertical; outline:none; font-family:inherit;
+  }
+  .social-card textarea:focus{border-color:var(--accent);}
+  .social-stats{display:flex; gap:14px; font-size:12px; color:var(--text-dim);}
+
+  .hint{font-size:12px; color:var(--text-dim); margin-top:10px;}
+
+  @media (max-width:720px){
+    header.topbar{flex-direction:column; align-items:flex-start; gap:14px;}
+    nav.tabs{width:100%; overflow-x:auto;}
+    table{display:block; overflow-x:auto; white-space:nowrap;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">C</div>
+      <div>
+        <h1>CRM Basic</h1>
+        <span>Clientes · eCommerce · Redes Sociales</span>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="active" data-tab="clientes">Clientes</button>
+      <button data-tab="tienda">eCommerce</button>
+      <button data-tab="redes">Redes Sociales</button>
+    </nav>
+  </header>
+
+  <!-- ===================== TAB CLIENTES ===================== -->
+  <div id="tab-clientes" class="tab-content">
+    <div class="stats-row">
+      <div class="stat-card" style="--accent-color:var(--accent)">
+        <div class="label">Total clientes</div>
+        <div class="value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card" style="--accent-color:var(--ok)">
+        <div class="label">Activos</div>
+        <div class="value" id="statActivos">0</div>
+      </div>
+      <div class="stat-card" style="--accent-color:var(--warn)">
+        <div class="label">Potenciales</div>
+        <div class="value" id="statPotenciales">0</div>
+      </div>
+      <div class="stat-card" style="--accent-color:var(--danger)">
+        <div class="label">Perdidos</div>
+        <div class="value" id="statPerdidos">0</div>
+      </div>
+    </div>
+
+    <section class="panel">
+      <h2><span class="dot"></span>Gestión de Clientes</h2>
+      <div class="toolbar">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Buscar por nombre o email...">
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <select id="filterEstado">
+            <option value="">Todos los estados</option>
+            <option value="Activo">Activo</option>
+            <option value="Potencial">Potencial</option>
+            <option value="Inactivo">Inactivo</option>
+            <option value="Perdido">Perdido</option>
+          </select>
+          <button class="btn btn-primary" id="btnAddCliente">+ Nuevo Cliente</button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Contacto</th>
+            <th>Teléfono</th>
+            <th>Estado</th>
+            <th style="text-align:right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="clientesBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty-state" style="display:none;">
+        <div class="emoji">🗂️</div>
+        <p>No hay clientes que coincidan con la búsqueda.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== TAB ECOMMERCE ===================== -->
+  <div id="tab-tienda" class="tab-content" style="display:none;">
+    <section class="panel">
+      <h2><span class="dot" style="background:var(--accent-2)"></span>Productos Digitales</h2>
+      <div class="toolbar">
+        <p class="hint" style="margin:0;">Vende ebooks, cursos, plantillas y servicios digitales directamente a tus clientes.</p>
+        <button class="btn btn-primary" id="btnAddProducto">+ Nuevo Producto</button>
+      </div>
+      <div class="products-grid" id="productsGrid"></div>
+    </section>
+  </div>
+
+  <!-- ===================== TAB REDES SOCIALES ===================== -->
+  <div id="tab-redes" class="tab-content" style="display:none;">
+    <section class="panel">
+      <h2><span class="dot" style="background:var(--accent-3)"></span>Redes Sociales — Embudo de Cierre</h2>
+      <p class="hint" style="margin-bottom:16px;">Redacta y guarda publicaciones para dirigir tráfico hacia tu tienda y cerrar ventas.</p>
+      <div class="social-grid" id="socialGrid"></div>
+    </section>
+  </div>
+</div>
+
+<!-- ===================== MODAL CLIENTE ===================== -->
+<div class="modal-overlay" id="modalCliente">
+  <div class="modal">
+    <h3 id="modalClienteTitle">Nuevo Cliente</h3>
+    <form id="formCliente">
+      <input type="hidden" id="clienteId">
+      <div class="field">
+        <label>Nombre completo</label>
+        <input type="text" id="clienteNombre" required>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="clienteEmail" required>
+      </div>
+      <div class="field">
+        <label>Teléfono</label>
+        <input type="tel" id="clienteTelefono" required>
+      </div>
+      <div class="field">
+        <label>Estado</label>
+        <select id="clienteEstado">
+          <option value="Activo">Activo</option>
+          <option value="Potencial">Potencial</option>
+          <option value="Inactivo">Inactivo</option>
+          <option value="Perdido">Perdido</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="btnCancelCliente">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== MODAL PRODUCTO ===================== -->
+<div class="modal-overlay" id="modalProducto">
+  <div class="modal">
+    <h3>Nuevo Producto Digital</h3>
+    <form id="formProducto">
+      <div class="field">
+        <label>Nombre del producto</label>
+        <input type="text" id="prodNombre" required>
+      </div>
+      <div class="field">
+        <label>Descripción</label>
+        <input type="text" id="prodDesc" required>
+      </div>
+      <div class="field">
+        <label>Precio (€)</label>
+        <input type="number" id="prodPrecio" min="0" step="0.01" required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="btnCancelProducto">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Utilidades de almacenamiento ---------- */
+  const LS_CLIENTES = 'crm_clientes';
+  const LS_PRODUCTOS = 'crm_productos';
+  const LS_SOCIAL = 'crm_social';
+
+  function load(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    }catch(e){ return fallback; }
+  }
+  function save(key, data){
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  }
+
+  /* ---------- Datos iniciales de ejemplo ---------- */
+  const seedClientes = [
+    {id:uid(), nombre:'Laura Gómez', email:'laura.gomez@example.com', telefono:'611 222 333', estado:'Activo'},
+    {id:uid(), nombre:'Carlos Ruiz', email:'carlos.ruiz@example.com', telefono:'622 333 444', estado:'Potencial'},
+    {id:uid(), nombre:'Marta Sánchez', email:'marta.sanchez@example.com', telefono:'633 444 555', estado:'Inactivo'}
+  ];
+  const seedProductos = [
+    {id:uid(), nombre:'Ebook: Guía de Ventas 2026', desc:'Estrategias actualizadas para cerrar más clientes.', precio:19.90},
+    {id:uid(), nombre:'Plantilla CRM en Excel', desc:'Plantilla lista para gestionar tu cartera.', precio:9.90},
+    {id:uid(), nombre:'Curso: Redes Sociales para Pymes', desc:'Curso online de 6 módulos.', precio:49.00}
+  ];
+  const seedSocial = [
+    {id:uid(), red:'Instagram', color:'#e1306c', texto:'✨ Nuevo ebook disponible: Guía de Ventas 2026. Enlace en la tienda de nuestro perfil. #ventas #pymes'},
+    {id:uid(), red:'Facebook', color:'#1877f2', texto:'¿Sabías que puedes automatizar tu gestión de clientes? Descubre nuestra plantilla CRM en Excel.'},
+    {id:uid(), red:'LinkedIn', color:'#0a66c2', texto:'Lanzamos nuestro curso de Redes Sociales para Pymes. Ideal para negocios que quieren escalar sus ventas online.'}
+  ];
+
+  let clientes = load(LS_CLIENTES, null) || seedClientes;
+  let productos = load(LS_PRODUCTOS, null) || seedProductos;
+  let social = load(LS_SOCIAL, null) || seedSocial;
+  if(!load(LS_CLIENTES,null)) save(LS_CLIENTES, clientes);
+  if(!load(LS_PRODUCTOS,null)) save(LS_PRODUCTOS, productos);
+  if(!load(LS_SOCIAL,null)) save(LS_SOCIAL, social);
+
+  /* ---------- Tabs ---------- */
+  const tabButtons = document.querySelectorAll('nav.tabs button');
+  tabButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tabButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
+      document.getElementById('tab-'+btn.dataset.tab).style.display='block';
+    });
+  });
+
+  /* ---------- Clientes: render ---------- */
+  const clientesBody = document.getElementById('clientesBody');
+  const emptyState = document.getElementById('emptyState');
+  const searchInput = document.getElementById('searchInput');
+  const filterEstado = document.getElementById('filterEstado');
+
+  function badgeClass(estado){
+    return {
+      'Activo':'badge-activo',
+      'Potencial':'badge-potencial',
+      'Inactivo':'badge-inactivo',
+      'Perdido':'badge-perdido'
+    }[estado] || 'badge-inactivo';
+  }
+
+  function renderStats(){
+    document.getElementById('statTotal').textContent = clientes.length;
+    document.getElementById('statActivos').textContent = clientes.filter(c=>c.estado==='Activo').length;
+    document.getElementById('statPotenciales').textContent = clientes.filter(c=>c.estado==='Potencial').length;
+    document.getElementById('statPerdidos').textContent = clientes.filter(c=>c.estado==='Perdido').length;
+  }
+
+  function renderClientes(){
+    const q = searchInput.value.trim().toLowerCase();
+    const est = filterEstado.value;
+    const filtered = clientes.filter(c=>{
+      const matchQ = !q || c.nombre.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
+      const matchE = !est || c.estado === est;
+      return matchQ && matchE;
+    });
+
+    clientesBody.innerHTML = '';
+    emptyState.style.display = filtered.length ? 'none' : 'block';
+
+    filtered.forEach(c=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="cliente-nombre">${escapeHtml(c.nombre)}</div>
+        </td>
+        <td>
+          <div class="cliente-email">${escapeHtml(c.email)}</div>
+        </td>
+        <td>${escapeHtml(c.telefono)}</td>
+        <td><span class="badge ${badgeClass(c.estado)}">${escapeHtml(c.estado)}</span></td>
+        <td>
+          <div class="row-actions" style="justify-content:flex-end;">
+            <button class="icon-btn" title="Editar" data-edit="${c.id}">✎</button>
+            <button class="icon-btn danger" title="Eliminar" data-del="${c.id}">🗑</button>
+          </div>
+        </td>
+      `;
+      clientesBody.appendChild(tr);
+    });
+
+    renderStats();
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  clientesBody.addEventListener('click', (e)=>{
+    const editId = e.target.dataset.edit;
+    const delId = e.target.dataset.del;
+    if(editId) openClienteModal(editId);
+    if(delId){
+      if(confirm('¿Eliminar este cliente?')){
+        clientes = clientes.filter(c=>c.id !== delId);
+        save(LS_CLIENTES, clientes);
+        renderClientes();
+      }
+    }
+  });
+
+  searchInput.addEventListener('input', renderClientes);
+  filterEstado.addEventListener('change', renderClientes);
+
+  /* ---------- Modal Cliente ---------- */
+  const modalCliente = document.getElementById('modalCliente');
+  const formCliente = document.getElementById('formCliente');
+  const modalClienteTitle = document.getElementById('modalClienteTitle');
+
+  function openClienteModal(id){
+    formCliente.reset();
+    if(id){
+      const c = clientes.find(x=>x.id===id);
+      if(!c) return;
+      modalClienteTitle.textContent = 'Editar Cliente';
+      document.getElementById('clienteId').value = c.id;
+      document.getElementById('clienteNombre').value = c.nombre;
+      document.getElementById('clienteEmail').value = c.email;
+      document.getElementById('clienteTelefono').value = c.telefono;
+      document.getElementById('clienteEstado').value = c.estado;
+    } else {
+      modalClienteTitle.textContent = 'Nuevo Cliente';
+      document.getElementById('clienteId').value = '';
+    }
+    modalCliente.classList.add('open');
+  }
+  function closeClienteModal(){ modalCliente.classList.remove('open'); }
+
+  document.getElementById('btnAddCliente').addEventListener('click', ()=>openClienteModal(null));
+  document.getElementById('btnCancelCliente').addEventListener('click', closeClienteModal);
+  modalCliente.addEventListener('click', (e)=>{ if(e.target===modalCliente) closeClienteModal(); });
+
+  formCliente.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const id = document.getElementById('clienteId').value;
+    const nombre = document.getElementById('clienteNombre').value.trim();
+    const email = document.getElementById('clienteEmail').value.trim();
+    const telefono = document.getElementById('clienteTelefono').value.trim();
+    const estado = document.getElementById('clienteEstado').value;
+
+    if(id){
+      const c = clientes.find(x=>x.id===id);
+      Object.assign(c, {nombre, email, telefono, estado});
+    } else {
+      clientes.push({id:uid(), nombre, email, telefono, estado});
+    }
+    save(LS_CLIENTES, clientes);
+    closeClienteModal();
+    renderClientes();
+  });
+
+  /* ---------- eCommerce: render ---------- */
+  const productsGrid = document.getElementById('productsGrid');
+  const productIcons = ['📘','🧩','🎓','💾','🖥️','📦'];
+
+  function renderProductos(){
+    productsGrid.innerHTML = '';
+    productos.forEach((p,i)=>{
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <div class="product-icon">${productIcons[i % productIcons.length]}</div>
+        <h4>${escapeHtml(p.nombre)}</h4>
+        <p>${escapeHtml(p.desc)}</p>
+        <div class="product-price">€${Number(p.precio).toFixed(2)}</div>
+        <div class="product-meta">
+          <span>Producto digital</span>
+          <button class="icon-btn danger" title="Eliminar" data-delprod="${p.id}">🗑</button>
+        </div>
+      `;
+      productsGrid.appendChild(card);
+    });
+  }
+
+  productsGrid.addEventListener('click', (e)=>{
+    const delId = e.target.dataset.delprod;
+    if(delId){
+      if(confirm('¿Eliminar este producto?')){
+        productos = productos.filter(p=>p.id !== delId);
+        save(LS_PRODUCTOS, productos);
+        renderProductos();
+      }
+    }
+  });
+
+  const modalProducto = document.getElementById('modalProducto');
+  const formProducto = document.getElementById('formProducto');
+  document.getElementById('btnAddProducto').addEventListener('click', ()=>{
+    formProducto.reset();
+    modalProducto.classList.add('open');
+  });
+  document.getElementById('btnCancelProducto').addEventListener('click', ()=>modalProducto.classList.remove('open'));
+  modalProducto.addEventListener('click', (e)=>{ if(e.target===modalProducto) modalProducto.classList.remove('open'); });
+
+  formProducto.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const nombre = document.getElementById('prodNombre').value.trim();
+    const desc = document.getElementById('prodDesc').value.trim();
+    const precio = parseFloat(document.getElementById('prodPrecio').value);
+    productos.push({id:uid(), nombre, desc, precio});
+    save(LS_PRODUCTOS, productos);
+    modalProducto.classList.remove('open');
+    renderProductos();
+  });
+
+  /* ---------- Redes Sociales: render ---------- */
+  const socialGrid = document.getElementById('socialGrid');
+  const socialInitials = {Instagram:'IG', Facebook:'FB', LinkedIn:'IN', TikTok:'TT', X:'X'};
+
+  function renderSocial(){
+    socialGrid.innerHTML = '';
+    social.forEach(s=>{
+      const card = document.createElement('div');
+      card.className = 'social-card';
+      card.innerHTML = `
+        <div class="social-head">
+          <div class="social-icon" style="background:${s.color}">${socialInitials[s.red] || s.red.slice(0,2).toUpperCase()}</div>
+          <div><strong>${escapeHtml(s.red)}</strong></div>
+        </div>
+        <textarea data-social="${s.id}">${escapeHtml(s.texto)}</textarea>
+        <div class="social-stats">
+          <span>🔗 Enlace hacia la tienda</span>
+        </div>
+      `;
+      socialGrid.appendChild(card);
+    });
+  }
+
+  socialGrid.addEventListener('change', (e)=>{
+    const id = e.target.dataset.social;
+    if(id){
+      const s = social.find(x=>x.id===id);
+      if(s){ s.texto = e.target.value; save(LS_SOCIAL, social); }
+    }
+  });
+
+  /* ---------- Init ---------- */
+  renderClientes();
+  renderProductos();
+  renderSocial();
+})();
+</script>
+
+</body>
+</html>
